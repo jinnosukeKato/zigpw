@@ -1,0 +1,75 @@
+const std = @import("std");
+const time = std.time;
+const mem = std.mem;
+const Allocator = mem.Allocator;
+const fmt = std.fmt;
+const DefaultPrng = std.rand.DefaultPrng;
+
+pub fn main() !void {
+    const allocator: Allocator = std.heap.page_allocator;
+
+    var args = try std.process.argsWithAllocator(allocator);
+    defer args.deinit(); // 内部バッファを解放
+
+    const stdout = std.io.getStdOut().writer();
+
+    var count: usize = 0;
+    var len: usize = 16;
+    // while with optional 結果がnullだと離脱する
+    while (args.next()) |arg| : (count += 1) {
+        switch (count) {
+            0 => continue,
+            1 => {
+                if (mem.eql(u8, arg, "-n")) {
+                    continue;
+                } else {
+                    try stdout.print("Error: illigal arguments\n", .{});
+                    return;
+                }
+            },
+            2 => len = try fmt.parseUnsigned(usize, arg, 0),
+            else => break,
+        }
+    }
+
+    if (len <= 0) {
+        return;
+    }
+
+    // アロケーター使ってメモリ確保
+    const buff = try allocator.alloc(u8, len); // メモリ確保
+    defer allocator.free(buff); // deferによってこのスコープを抜けるとメモリが解放
+
+    count = 0;
+    generate(&buff, len);
+    while (count < buff.len) : (count += 1) {
+        try stdout.print("{u}", .{buff[count]});
+    }
+}
+
+// 0x21 から 0x7E が使用する文字 で、 0x7E-0x21=93
+// PRNG でu64の範囲の乱数を生成し、それを 93 + 1 の余剰で 0-93 の範囲に収め、
+// 0x21 を加算してランダムなコードポイントを生成する
+fn generate(buff: *const []u8, length: usize) void {
+    // todo: csprngに置き換える
+    var prng = DefaultPrng.init(@intCast(u64, time.milliTimestamp()));
+
+    var c: usize = 0;
+    while (c < length) : (c += 1) {
+        const rand = prng.next();
+        const point = rand % (93 + 1) + 0x21;
+        buff.*[c] = @intCast(u8, point);
+    }
+}
+
+test "expect all character code points to range in 0x21 to 0x7E" {
+    const allocator: Allocator = std.heap.page_allocator;
+    const buff = try allocator.alloc(u8, 64); // メモリ確保
+    defer allocator.free(buff); // deferによってこのスコープを抜けるとメモリが解放
+
+    generate(&buff, buff.len);
+
+    for (buff) |c| {
+        try std.testing.expect((c >= 0x21) and (c <= 0x7E));
+    }
+}
