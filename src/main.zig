@@ -62,6 +62,18 @@ fn generate(buff: *const []u8, length: usize) void {
     }
 }
 
+fn generateWithCsprng(buff: []u8) void {
+    var prng = DefaultPrng.init(@intCast(u64, time.milliTimestamp()));
+    var cs_seed: [32]u8 = undefined;
+    prng.fill(&cs_seed);
+    var csprng = std.rand.DefaultCsprng.init(cs_seed);
+
+    var c: usize = 0;
+    while (c < buff.len) : (c += 1) {
+        buff[c] = csprng.random().intRangeAtMost(u8, 0x21, 0x7E);
+    }
+}
+
 test "expect all character code points to range in 0x21 to 0x7E" {
     const allocator: Allocator = std.heap.page_allocator;
     const buff = try allocator.alloc(u8, 64); // メモリ確保
