@@ -41,10 +41,8 @@ pub fn main() !void {
     defer allocator.free(buff); // deferによってこのスコープを抜けるとメモリが解放
 
     count = 0;
-    generate(&buff, len);
-    while (count < buff.len) : (count += 1) {
-        try stdout.print("{u}", .{buff[count]});
-    }
+    generateWithCsprng(buff);
+    try stdout.print("{s}", .{buff});
 }
 
 // 0x21 から 0x7E が使用する文字 で、 0x7E-0x21=93
@@ -79,7 +77,7 @@ test "expect all character code points to range in 0x21 to 0x7E" {
     const buff = try allocator.alloc(u8, 64); // メモリ確保
     defer allocator.free(buff); // deferによってこのスコープを抜けるとメモリが解放
 
-    generate(&buff, buff.len);
+    generateWithCsprng(buff);
 
     for (buff) |c| {
         try std.testing.expect((c >= 0x21) and (c <= 0x7E));
