@@ -49,7 +49,6 @@ pub fn main() !void {
 // PRNG でu64の範囲の乱数を生成し、それを 93 + 1 の余剰で 0-93 の範囲に収め、
 // 0x21 を加算してランダムなコードポイントを生成する
 fn generate(buff: *const []u8, length: usize) void {
-    // todo: csprngに置き換える
     var prng = DefaultPrng.init(@intCast(u64, time.milliTimestamp()));
 
     var c: usize = 0;
