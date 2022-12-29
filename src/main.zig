@@ -5,6 +5,11 @@ const Allocator = mem.Allocator;
 const fmt = std.fmt;
 const DefaultPrng = std.rand.DefaultPrng;
 
+const IlligalArgumentsError = error{
+    TooManyArguments,
+    InvalidArguments,
+};
+
 pub fn main() !void {
     const allocator: Allocator = std.heap.page_allocator;
 
@@ -23,12 +28,11 @@ pub fn main() !void {
                 if (mem.eql(u8, arg, "-n")) {
                     continue;
                 } else {
-                    try stdout.print("Error: illigal arguments\n", .{});
-                    return;
+                    return IlligalArgumentsError.InvalidArguments;
                 }
             },
             2 => len = try fmt.parseUnsigned(usize, arg, 0),
-            else => break,
+            else => return IlligalArgumentsError.TooManyArguments,
         }
     }
 
