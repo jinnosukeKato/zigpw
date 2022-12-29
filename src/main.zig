@@ -44,7 +44,6 @@ pub fn main() !void {
     const buff = try allocator.alloc(u8, len); // メモリ確保
     defer allocator.free(buff); // deferによってこのスコープを抜けるとメモリが解放
 
-    count = 0;
     generateWithCsprng(buff);
     try stdout.print("{s}", .{buff});
 }
